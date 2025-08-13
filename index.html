@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<script language="javascript">
+function clear (){
+Source=document.bodv.firstChild.data;
+document.open ();
+document.close ();
+document.title="看不到源代码"；
+document.body.innerHTML=Source;
+]
+</script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
+<title>图书馆偷拍诬告事件</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif}
+html,body{height:100%;background:#111;display:flex;justify-content:center;align-items:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#startScreen,#game{width:360px;height:600px;background:#222;border:4px solid #555;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#fff;overflow:hidden}
+#startScreen{z-index:1000}
+#gameTitle{font-size:36px;font-weight:900;background:linear-gradient(45deg,#ff5fa2 20%,#ffc93c 50%,#6bcf7f 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:40px;text-shadow:0 0 8px rgba(255,255,255,.3)}
+#startBtn{margin-top:40px;padding:16px 48px;font-size:22px;font-weight:700;border:none;border-radius:50px;background:linear-gradient(135deg,#ff5fa2 0%,#ffc93c 100%);color:#fff;cursor:pointer;box-shadow:0 6px 20px rgba(255,95,162,.4);transition:.3s}
+#startBtn:hover{transform:translateY(-4px) scale(1.05)}
+#startBtn:active{transform:translateY(0) scale(.98)}
+.snow{position:absolute;top:-20px;border-radius:50%;background:#fff;opacity:.8;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+
+/* 游戏内部 */
+#game{display:none}
+#hud{height:40px;width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 10px;font-weight:700;font-size:16px}
+#itchBarWrap{height:20px;background:#555;border-radius:4px;overflow:hidden;width:100%}
+#itchBar{height:100%;background:#f00;width:0%;transition:width .1s}
+#timerSpan{font-size:16px;font-weight:700}
+#flash{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,0,0,.45);display:none;animation:blink .25s infinite;pointer-events:none;z-index:5}
+@keyframes blink{0%,100%{opacity:.45}50%{opacity:.9}}
+#warning{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:36px;font-weight:900;color:#ff0000;text-shadow:0 0 10px #ff0000;z-index:6;display:none;pointer-events:none}
+#dialog{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;background:#000;border:2px solid #f00;border-radius:12px;color:#fff;font-size:18px;text-align:center;padding:20px;line-height:1.5;z-index:20;display:none}
+#dialogText{margin-bottom:15px}
+#restartBtn{padding:8px 16px;border:none;border-radius:6px;background:#f00;color:#fff;font-size:16px;cursor:pointer}
+.btn-effect{position:relative;overflow:hidden;transition:transform .2s}
+.btn-effect:active{transform:scale(.95)}
+.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.6);transform:scale(0);animation:ripple .6s linear;pointer-events:none}
+@keyframes ripple{to{transform:scale(4);opacity:0}}
+</style>
+</head>
+<body onload=clear()>
+<!--
+<a href="https://heartfelt-empanada-8615a8.netlify.app/>netlify
+</a>源代码好像是不让看的!-->
+<!-- 开始界面 -->
+<div id="startScreen">
+  <h1 id="gameTitle">图书馆偷拍诬告事件</h1>
+  <h2>目标</h2>
+  <p>专心学习并偷偷挠痒！！</p>
+  <p>尽可能获取学习点</p>
+  <p>📖 点击 <strong>学习</strong> 按钮获得分数</p>
+  <p>🤲 长按 <strong>挠痒</strong> 按钮降低痒值</p>
+  <button id="startBtn" class="btn-effect">开始游戏</button>
+</div>
+
+<!-- 游戏主体 -->
+<div id="game">
+  <div id="hud">
+    <span>学习点:<span id="score">0</span></span>
+    <span>痒值:<span id="itchNum">0</span>/100</span>
+    <span id="timerSpan">时间:<span id="timer">0</span>s</span>
+  </div>
+  <div id="itchBarWrap"><div id="itchBar"></div></div>
+
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:space-around;align-items:center;padding:20px 0">
+    <button id="learnBtn" class="btn-effect" style="width:200px;height:160px;border:none;border-radius:12px;font-size:28px;background:#3b82f6;color:#fff">📖<br>学习</button>
+    <button id="scratchBtn" class="btn-effect" style="width:200px;height:160px;border:none;border-radius:12px;font-size:28px;background:#22c55e;color:#fff">🤲<br>挠痒</button>
+  </div>
+
+  <div id="flash"></div>
+  <div id="warning">正在偷拍</div>
+  <div id="dialog">
+    <div id="dialogText"></div>
+    <button id="restartBtn" class="btn-effect">再来一局</button>
+  </div>
+</div>
+
+<script>
+/* 雪花动画 */
+(()=>{
+  const start=document.getElementById('startScreen');
+  setInterval(()=>{
+    const s=document.createElement('div');
+    s.className='snow';
+    s.style.left=Math.random()*100+'%';
+    s.style.width=s.style.height=Math.random()*4+2+'px';
+    s.style.animationDuration=Math.random()*3+2+'s';
+    start.appendChild(s);
+    setTimeout(()=>s.remove(),5000);
+  },200);
+})();
+
+/* 波纹特效 */
+const addRipple=e=>{
+  const btn=e.currentTarget;
+  const ripple=document.createElement('span');
+  ripple.classList.add('ripple');
+  const rect=btn.getBoundingClientRect();
+  const size=Math.max(rect.width,rect.height);
+  ripple.style.width=ripple.style.height=size+'px';
+  ripple.style.left=(e.clientX||e.touches[0].clientX)-rect.left-size/2+'px';
+  ripple.style.top=(e.clientY||e.touches[0].clientY)-rect.top-size/2+'px';
+  btn.appendChild(ripple);
+  setTimeout(()=>ripple.remove(),600);
+};
+[...document.querySelectorAll('.btn-effect')].forEach(btn=>btn.addEventListener('pointerdown',addRipple));
+
+/* 开始/游戏切换 */
+document.getElementById('startBtn').addEventListener('click',()=>{
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('game').style.display='flex';
+});
+
+/* ========== 游戏逻辑 ========== */
+let score=0,itch=0,time=0,scratching=false,isGameOver=false;
+const scoreEl=document.getElementById('score'),itchNum=document.getElementById('itchNum'),itchBar=document.getElementById('itchBar'),timerEl=document.getElementById('timer'),learnBtn=document.getElementById('learnBtn'),scratchBtn=document.getElementById('scratchBtn'),flash=document.getElementById('flash'),warning=document.getElementById('warning'),dialog=document.getElementById('dialog'),dialogText=document.getElementById('dialogText'),restartBtn=document.getElementById('restartBtn');
+
+/* 顺时计时器 */
+setInterval(()=>{time++;timerEl.textContent=time;},1000);
+
+/* 痒值自动+5 每0.7秒 */
+setInterval(()=>{itch=Math.min(100,itch+5);itchNum.textContent=itch;itchBar.style.width=itch+'%';},700);
+
+/* 学习按钮 */
+learnBtn.addEventListener('click',()=>{score++;scoreEl.textContent=score;});
+
+/* 挠痒按钮（长按 -2/秒） */
+scratchBtn.addEventListener('touchstart',e=>{e.preventDefault();scratching=true;scratchLoop();},{passive:false});
+scratchBtn.addEventListener('touchend',()=>scratching=false);
+scratchBtn.addEventListener('mousedown',()=>{scratching=true;scratchLoop();});
+scratchBtn.addEventListener('mouseup',()=>scratching=false);
+function scratchLoop(){if(!scratching || isGameOver)return;itch=Math.max(0,itch-2);itchNum.textContent=itch;itchBar.style.width=itch+'%';setTimeout(scratchLoop,1000);}
+
+/* 偷拍警告随机出现 */
+function scheduleFlash() {
+  const delay = 2000 + Math.random() * 6000;
+  setTimeout(() => {
+    if (isGameOver) return;
+    flash.style.display = 'block';
+    warning.style.display = 'block';
+    setTimeout(() => {
+      flash.style.display = 'none';
+      warning.style.display = 'none';
+      scheduleFlash();
+    }, 1000);
+  }, delay);
+}
+scheduleFlash();
+
+/* 检测警告期间挠痒 */
+setInterval(() => {
+  if (flash.style.display === 'block' && scratching) {
+    gameOver();
+  }
+}, 50);
+
+/* 游戏结束 */
+function gameOver() {
+  isGameOver = true;
+  showDialog('💥 游戏结束！<br>你被诬告偷拍了！');
+}
+
+/* 显示对话框 */
+function showDialog(html) {
+  dialogText.innerHTML = html;
+  dialog.style.display = 'block';
+}
+
+/* 重置游戏 */
+function resetGame() {
+  score = 0;
+  itch = 0;
+  time = 0;
+  scratching = false;
+  isGameOver = false;
+  
+  scoreEl.textContent = score;
+  itchNum.textContent = itch;
+  itchBar.style.width = itch + '%';
+  timerEl.textContent = time;
+  
+  dialog.style.display = 'none';
+  flash.style.display = 'none';
+  warning.style.display = 'none';
+  
+  scheduleFlash();
+}
+
+/* 绑定“再来一局”按钮 */
+restartBtn.addEventListener('click', resetGame);
+
+</script>
+</body>
+</html>
